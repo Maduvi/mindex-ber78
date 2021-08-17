@@ -6,10 +6,10 @@ Compute the orbital insolation monsoon index for any time slice past, present or
 
 ## Compilation
 
-The program is writen in Fortran 90. To obtain the caloric half-year we include a sorting algorithm similar to package [palinsol](https://cran.r-project.org/web/packages/palinsol/) of the R programming language by  M. Crucifx (U. catholique de Louvain, Belgium). The sorting algorithm is a bubble sorting algorithm in Fortran by M. J. Rutter available [here](https://www.mjr19.org.uk/IT/sorts/). To compile the program a `Makefile` is provided for the GNU compiler gfortran. In a terminal go to the program folder and:
+The program is writen in Fortran 90. To obtain the caloric half-year we include a sorting algorithm similar to package [palinsol](https://cran.r-project.org/web/packages/palinsol/) of the R programming language by  M. Crucifx (U. catholique de Louvain, Belgium). The sorting algorithm is a bubble sorting algorithm in Fortran by M. J. Rutter available [here](https://www.mjr19.org.uk/IT/sorts/). To compile the program a `Makefile` is provided for the GNU compiler gfortran. In a terminal go to the program folder and execute the `make` statement:
 
 ```bash
-make
+$ make
 ```
 
 Two executable files are created in the `bin` folder: `single.exe` and `transient.exe`.
@@ -32,10 +32,10 @@ In case the user already has orbital parameters at hand and wants to estimate th
  /
 ```
 
-To execute the program then in the command line:
+To execute the program then in the command line from the `bin` folder:
 
 ```bash
-./single.exe single_21ka.namelist
+$ ./single.exe single_21ka.namelist
 ```
 
 This returns:
@@ -70,10 +70,10 @@ To compute the monsoon index for a specific time window there is the executable 
  /
 ```
 
-To execute the program then in the command line:
+To execute the program then in the command line from the `bin` folder:
 
 ```bash
-./transient.exe transient_past.namelist
+$ ./transient.exe transient_past.namelist
 ```
 
 The full output of this command is put here in the `out` folder in case someone is curious. It begins like:
