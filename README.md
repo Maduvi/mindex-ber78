@@ -4,7 +4,13 @@ Compute the orbital insolation monsoon index for any time slice past, present or
 
 ## Compilation
 
-The program is writen in Fortran 90. To obtain the caloric half-year we include a sorting algorithm similar to package [palinsol](https://cran.r-project.org/web/packages/palinsol/) of the R programming language by  M. Crucifx (U. catholique de Louvain, Belgium). The sorting algorithm is a bubble sorting algorithm in Fortran by M. J. Rutter available [here](https://www.mjr19.org.uk/IT/sorts/). To compile it a `Makefile` is provided for the GNU compiler gfortran. In a terminal go to the program folder and type `make`. Two executable files are created in the `bin` folder: `single.exe` and `transient.exe`.
+The program is writen in Fortran 90. To obtain the caloric half-year we include a sorting algorithm similar to package [palinsol](https://cran.r-project.org/web/packages/palinsol/) of the R programming language by  M. Crucifx (U. catholique de Louvain, Belgium). The sorting algorithm is a bubble sorting algorithm in Fortran by M. J. Rutter available [here](https://www.mjr19.org.uk/IT/sorts/). To compile the program a `Makefile` is provided for the GNU compiler gfortran. In a terminal go to the program folder and:
+
+```bash
+make
+```
+
+Two executable files are created in the `bin` folder: `single.exe` and `transient.exe`.
 
 ## Examples
 
