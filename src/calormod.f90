@@ -19,10 +19,10 @@ MODULE calormod
 CONTAINS
 
     SUBROUTINE CALORIC_SUMMER(lat, ecc, xob, perh, Qs)
-        ! Computes cumulative insolation during astronomical summer
+        ! Computes cumulative insolation during caloric summer
         ! for a given latitude and orbital parameters.
-        ! Simply sorts insolation values in a year and then
-        ! accumulates the higher-valued half.
+        ! First computes astronomical summer cumulative insolation.
+        ! Then uses Vernekar (1972) formulae.
         ! Results in Langley units to compare with Milankov. Kanon.
 
         REAL, INTENT(IN) :: lat, ecc, xob, perh
@@ -108,7 +108,7 @@ CONTAINS
             END DO
         END DO
         
-        !c Daily insolation and zenite angle
+        ! Daily insolation and zenith angle
         DO m = 1, 360
             solarm(m) = solarm(m) / 24.0
         END DO
