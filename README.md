@@ -1,4 +1,4 @@
-# monsindex-ber78 
+# monsindex-fortran 
 
 Orbital insolation monsoon index calculator in Fortran.
 
