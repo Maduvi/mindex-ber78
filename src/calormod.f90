@@ -15,14 +15,13 @@ MODULE calormod
     REAL, PARAMETER  ::   hyear = 180.0  ! half a year
     REAL, PARAMETER  ::   Tmin = ttrop * 24 * 60  ! minutes
     REAL, PARAMETER  ::   Slang = (s0 * 60) / 41840  ! lang per minute
+    REAL, PARAMETER  ::   conv = 2.06500956023 ! conversion Wm-2 to Lang day-1
 
 CONTAINS
 
-    SUBROUTINE CALORIC_SUMMER(lat, ecc, xob, perh, Qs)
+    SUBROUTINE PRESENT_CALORIC_SUMMER(lat, ecc, xob, perh, Qs)
         ! Computes cumulative insolation during caloric summer
         ! for a given latitude and orbital parameters.
-        ! First computes astronomical summer cumulative insolation.
-        ! Then uses Vernekar (1972) formulae.
         ! Results in Langley units to compare with Milankov. Kanon.
 
         REAL, INTENT(IN) :: lat, ecc, xob, perh
@@ -35,18 +34,52 @@ CONTAINS
         CALL ASTRO_SUMMER(lat, ecc, xob, perh, Rs)
 
         ! m coefficient
-        m = 2 * Tmin * Slang * COS(lat * pir) / (pi**2 * SQRT(1 - ecc**2))
+        m = 2 * ttrop * s0 * COS(lat * pir) / (pi**2 * SQRT(1 - ecc**2))
 
         ! caloric summer
-        Qs = (Rs - m * ecc * SIN(perh * pir)) / HYEAR
+        Qs = (Rs - m * ecc * SIN(perh * pir)) / hyear
+        
+    END SUBROUTINE PRESENT_CALORIC_SUMMER
+
+
+    SUBROUTINE CALORIC_SUMMER(t, lat,  perh, ecc, xob, prec0, xob0, Qs0, Qs)
+
+        REAL, INTENT(IN)  :: t, lat,  perh, ecc, xob, prec0, xob0, Qs0
+        REAL, INTENT(OUT) :: Qs
+
+        ! local
+        REAL :: deps, m, prec
+        REAL :: Rs, dRs, Raux
+        REAL :: dQs
+        
+        ! delta epsilon
+        deps = xob - xob0
+        
+        ! delta precession index
+        prec  = (ecc * SIN(perh * pir)) - prec0
+        
+        ! coefficient m
+        m = 2 * ttrop * s0 * COS(lat * pir) / (pi**2 * SQRT(1 - ecc**2))
+
+        ! compute delta per degree in obliquity
+        CALL ASTRO_SUMMER(lat, ecc, xob, perh, Rs)
+        CALL ASTRO_SUMMER(lat, ecc, xob + 1, perh, Raux)
+        dRs = Raux - Rs
+
+        ! change in Q following milankovitch
+        dQs = (dRs * deps - prec * m) / hyear
+
+        ! absolute caloric summer
+        Qs = Qs0 + dQs
         
     END SUBROUTINE CALORIC_SUMMER
+    
     
     SUBROUTINE ASTRO_SUMMER(lat, ecc, xob, perh, Rs)
         ! Computes cumulative insolation during astronomical summer
         ! for a given latitude and orbital parameters.
-        ! Simply sorts insolation values in a year and then
-        ! accumulates the higher-valued half.
+        ! Simply selects insolation from vernal equinox (day 80)
+        ! to fall equinox (day 80 + 180) and accumulates it.
         ! Results in Langley units to compare with Milankov. Kanon.
 
         REAL, INTENT(IN) :: lat, ecc, xob, perh
@@ -58,13 +91,67 @@ CONTAINS
         ! compute daily insolation at latitude lat for 360 days
         CALL SINSOL(lat, ecc, xob, perh, solarm)
 
-        ! sort ascending
-        CALL BUBBLE_SORT(solarm)
+        ! CALL SUMMER_LENGTH(ecc, perh, Ts)
 
         ! total insola langley units
-        Rs = SUM(SOLARM(181:360)) * 86.4 / 41.840
+        Rs = SUM(SOLARM(80:260)) ! * 86.4 / 41.840
 
     END SUBROUTINE ASTRO_SUMMER
+
+
+    SUBROUTINE ASTRO_WINTER(lat, ecc, xob, perh, Rw)
+        ! Computes cumulative insolation during astronomical winter
+        ! for a given latitude and orbital parameters.
+        ! Simply selects insolation till vernal equinox (day 80)
+        ! and from fall equinox (day 80 + 180) and accumulates it.
+        ! Results in Langley units to compare with Milankov. Kanon.
+
+        REAL, INTENT(IN) :: lat, ecc, xob, perh
+        REAL, INTENT(OUT) :: Rw
+
+        ! local
+        REAL, DIMENSION(360) :: solarm
+
+        ! compute daily insolation at latitude lat for 360 days
+        CALL SINSOL(lat, ecc, xob, perh, solarm)
+
+        ! CALL SUMMER_LENGTH(ecc, perh, Ts)
+
+        ! total insola langley units
+        Rw = SUM(SOLARM(:80)) + SUM(SOLARM(260:)) ! * 86.4 / 41.840
+
+    END SUBROUTINE ASTRO_WINTER
+
+    SUBROUTINE SUMMER_SOLSTICE(lat, ecc, xob, perh, Rs)
+        ! Computes insolation during summer solstice
+        ! for a given latitude and orbital parameters.
+        ! Results in Langley units to compare with Milankov. Kanon.
+
+        REAL, INTENT(IN) :: lat, ecc, xob, perh
+        REAL, INTENT(OUT) :: Rs
+
+        ! local
+        REAL, DIMENSION(360) :: solarm
+
+        ! compute daily insolation at latitude lat for 360 days
+        CALL SINSOL(lat, ecc, xob, perh, solarm)
+
+        ! CALL SUMMER_LENGTH(ecc, perh, Ts)
+
+        ! total insola langley units
+        Rs = SOLARM(80 + 90) ! * 86.4 / 41.840
+
+    END SUBROUTINE SUMMER_SOLSTICE
+
+    SUBROUTINE SUMMER_LENGTH(ecc, perh, Ts)
+        ! Computes length of astronomical summer half-year.
+
+        REAL, INTENT(IN) :: ecc, perh
+        INTEGER, INTENT(OUT) :: Ts
+
+        Ts = CEILING((0.5 * ttrop) * (1 + (4 * ecc * SIN(perh * pir) / pi)))
+        
+    END SUBROUTINE SUMMER_LENGTH
     
     SUBROUTINE SINSOL(lat, ecc, xob, perh, solarm)
         ! Original by C.Kubatzki & A.Ganopolski
@@ -480,30 +567,5 @@ CONTAINS
         END DO
 
     END SUBROUTINE BERGER
-
-
-    SUBROUTINE BUBBLE_SORT(array)
-        ! Sorting arrays in ascending order.
-        ! Thanks to: https://www.mjr19.org.uk/IT/sorts/
-
-        ! global
-        REAL, INTENT(INOUT) :: array(:)
-
-        ! local
-        REAL    :: temp
-        INTEGER :: i, j, last
-
-        last = SIZE(array)
-
-        DO i=last - 1, 1, -1
-            DO j=1, i
-                IF (array(j + 1) < array(j)) THEN
-                    temp = array(j + 1)
-                    array(j + 1) = array(j)
-                    array(j) = temp
-                END IF
-            END DO
-        END DO
-    END SUBROUTINE BUBBLE_SORT
   
 END MODULE calormod
