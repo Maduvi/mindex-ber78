@@ -1,9 +1,9 @@
 ! namelist file
 ! ------------------->,
 &INPUT_INFO
- KTYP=               0,
- KUNI=               1,
- TINI=       -190000.0,
+ KTYP=               2,
+ KUNI=               0,
+ TINI=      -1000000.0,
  TFIN=             0.0,
  TINC=          1000.0,
  PERH=    97.770733785,
