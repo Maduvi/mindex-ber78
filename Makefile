@@ -5,16 +5,12 @@ LDFLAGS  = -L/usr/lib
 FFLAGS   = -g
 COMPILE  = $(FC) $(FFLAGS) $(CPPFLAGS) -c
 LINK     = $(FC) $(LDFLAGS) -o
-OBJECT1   = calormod.o single.o
-OBJECT2   = calormod.o transient.o
+OBJECT   = calormod.o monsindex.o
 
-all: single transient
+all: monsindex
 
-transient: $(OBJECT2)
-	$(LINK) bin/transient.exe $(OBJECT2)
-
-single: $(OBJECT1)
-	$(LINK) bin/single.exe $(OBJECT1)
+monsindex: $(OBJECT)
+	$(LINK) bin/monsindex.exe $(OBJECT)
 
 %.o: src/%.f90
 	$(COMPILE) $<
