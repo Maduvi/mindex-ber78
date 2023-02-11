@@ -1,6 +1,4 @@
-# monsindex-fortran 
-
-## Orbital insolation monsoon forcing index calculator.
+# monsindex-fortran: monsoon forcing index calculator
 
 Compute the orbital insolation monsoon forcing index for any time slice past, present or future. The index is defined in Rossignol-Strick (1983). It can be a proxy for the orbital forcing of the Earth system at low latitudes. It is computed as a difference in mean insolation between the Tropic of Cancer at 23.45°N and the Equator at 0°, during the caloric Northern Hemisphere summer half-year (cf. Rossignol-Strick, 1983). The caloric half-years (seasons) are defined in Milankovitch (1941). They allow objective comparison of summer and winter seasons across different millennia. Conversely, astronomical half-years (seasons) complicate comparisons because they have variable duration across millennia (e.g., some times astronomical summer lasts 169 days, while others 188). 
 
