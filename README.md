@@ -16,6 +16,12 @@ $ make
 
 One executable file is created in the `bin` folder: `monsindex.exe`.
 
+## Examples and testing
+
+For examples please check the contents of the folder `tests` where there are some already-made applications. Tests can be run using the provided BASH scripts (requires Python for plotting).
+
+For testing we compare the results of `monsindex.exe` with the output of `palinsol` R package (https://bitbucket.org/mcrucifix/insol). We can only compare insolation quantities, since `palinsol` does not calculate the monsoon forcing index. To test the calculation of the index we have digitized partly the data published in Vernekar (1972) to be able to estimate the original monsoon forcing index values of Rossignol-Strick (1983). Differences between our monsoon index and the original Rossignol-Strick (1983) should be explained in the difference in orbital parameters (we use Berger (1978), and not Vernekar's (1972)). Mean insolation values from `monsindex.exe` and `palinsol` are almost identical.
+
 ## Usage
 The executable allows the user four types of applications. A Fortran namelist text file is required as input with the specifications of the calculation. Example namelist files have a header with an arrow that helps align white spaces for the format that the Fortran program requires to be able to reliably read input parameters. If a wrong format is used in the namelist file then results can be weird. The program prints all output into `stdout`.
 
