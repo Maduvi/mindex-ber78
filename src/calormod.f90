@@ -1,56 +1,56 @@
-! Module containing all routines necessary to compute cumulative
+!
+! Module containing routines needed to compute cumulative
 ! insolation during caloric summer half-year.
 !
 ! Author: Maduvi
 ! Date: 28-07-2021
+!
 MODULE calormod
 
     IMPLICIT NONE
 
-    REAL, PARAMETER  ::   pi = 3.141592654
-    REAL, PARAMETER  ::   pir = pi / 180
-    REAL, PARAMETER  ::   pirr = pir / 3600
-    REAL, PARAMETER  ::   s0 = 1365.0    ! W m-2
-    REAL, PARAMETER  ::   ttrop = 360.0  ! tropical year
-    REAL, PARAMETER  ::   hyear = 180.0  ! half a year
-    REAL, PARAMETER  ::   Tmin = ttrop * 24 * 60  ! minutes
-    REAL, PARAMETER  ::   Slang = (s0 * 60) / 41840  ! lang per minute
-    REAL, PARAMETER  ::   conv = 2.06500956023 ! conversion Wm-2 to Lang day-1
-
+    REAL(KIND=8), PARAMETER  ::   pi = 4.D0 * DATAN(1.D0)
+    REAL(KIND=8), PARAMETER  ::   pir = pi / 180.0
+    REAL(KIND=8), PARAMETER  ::   pirr = pir / 3600.0
+    REAL(KIND=8), PARAMETER  ::   ttrop = 360.0         ! 365.24219876  ! tropical year
+    REAL(KIND=8), PARAMETER  ::   hyear = 180.0       ! half a year
+    REAL(KIND=8), PARAMETER  ::   Tmin = ttrop * 24.0 * 60.0  ! minutes
+    REAL(KIND=8), PARAMETER  ::   conv = 2.06500956023 ! conversion Wm-2 to Lang day-1
 CONTAINS
 
-    SUBROUTINE PRESENT_CALORIC_SUMMER(lat, ecc, xob, perh, Qs)
-        ! Computes cumulative insolation during caloric summer
+    SUBROUTINE TODAY_CALSUMMER(s0, lat, ecc, xob, perh, Qs)
+        ! compute cumulative insolation during caloric summer
         ! for a given latitude and orbital parameters.
-        ! Results in Langley units to compare with Milankov. Kanon.
 
-        REAL, INTENT(IN) :: lat, ecc, xob, perh
-        REAL, INTENT(OUT) :: Qs
+        REAL(KIND=8), INTENT(IN)  :: lat, ecc, xob, perh, s0
+        REAL(KIND=8), INTENT(OUT) :: Qs
 
         ! local
-        REAL :: Rs, m
+        REAL(KIND=8) :: Rs, Rw, m, ss, sw
+        REAL(KIND=8), DIMENSION(360) :: solarm
 
         ! Astronomical cumulative insolation
-        CALL ASTRO_SUMMER(lat, ecc, xob, perh, Rs)
+        CALL SINSOL(s0, lat, ecc, xob, perh, solarm, Rs, Rw, ss, sw)
 
         ! m coefficient
-        m = 2 * ttrop * s0 * COS(lat * pir) / (pi**2 * SQRT(1 - ecc**2))
+        m = 2.0 * ttrop * s0 * COS(lat * pir) / (pi**2 * SQRT(1 - ecc**2))
 
         ! caloric summer
         Qs = (Rs - m * ecc * SIN(perh * pir)) / hyear
         
-    END SUBROUTINE PRESENT_CALORIC_SUMMER
+    END SUBROUTINE TODAY_CALSUMMER
 
+    SUBROUTINE CALSUMMER(s0, lat,  perh, ecc, xob, prec0, xob0, Qs0, Qs)
+        ! compute caloric summer insolation as defined by Milankovitch
 
-    SUBROUTINE CALORIC_SUMMER(t, lat,  perh, ecc, xob, prec0, xob0, Qs0, Qs)
-
-        REAL, INTENT(IN)  :: t, lat,  perh, ecc, xob, prec0, xob0, Qs0
-        REAL, INTENT(OUT) :: Qs
+        REAL(KIND=8), INTENT(IN)  :: s0, lat,  perh, ecc, xob, prec0, xob0, Qs0
+        REAL(KIND=8), INTENT(OUT) :: Qs
 
         ! local
-        REAL :: deps, m, prec
-        REAL :: Rs, dRs, Raux
-        REAL :: dQs
+        REAL(KIND=8) :: deps, m, prec
+        REAL(KIND=8) :: Rs, dRs, Raux, Rw, Rwaux
+        REAL(KIND=8) :: dQs, ss, sw
+        REAL(KIND=8), DIMENSION(360) :: solarm
         
         ! delta epsilon
         deps = xob - xob0
@@ -59,11 +59,11 @@ CONTAINS
         prec  = (ecc * SIN(perh * pir)) - prec0
         
         ! coefficient m
-        m = 2 * ttrop * s0 * COS(lat * pir) / (pi**2 * SQRT(1 - ecc**2))
+        m = 2.0 * ttrop * s0 * COS(lat * pir) / (pi**2 * SQRT(1 - ecc**2))
 
         ! compute delta per degree in obliquity
-        CALL ASTRO_SUMMER(lat, ecc, xob, perh, Rs)
-        CALL ASTRO_SUMMER(lat, ecc, xob + 1, perh, Raux)
+        CALL SINSOL(s0, lat, ecc, xob, perh, solarm, Rs, Rw, ss, sw)
+        CALL SINSOL(s0, lat, ecc, xob + 1, perh, solarm, Raux, Rwaux, ss, sw)
         dRs = Raux - Rs
 
         ! change in Q following milankovitch
@@ -72,117 +72,60 @@ CONTAINS
         ! absolute caloric summer
         Qs = Qs0 + dQs
         
-    END SUBROUTINE CALORIC_SUMMER
+    END SUBROUTINE CALSUMMER
     
-    
-    SUBROUTINE ASTRO_SUMMER(lat, ecc, xob, perh, Rs)
-        ! Computes cumulative insolation during astronomical summer
-        ! for a given latitude and orbital parameters.
-        ! Simply selects insolation from vernal equinox (day 80)
-        ! to fall equinox (day 80 + 180) and accumulates it.
-        ! Results in Langley units to compare with Milankov. Kanon.
+    SUBROUTINE SEASONS_LENGTH(ecc, perh, Ts, Tw)
+        ! estimate length of astronomical summer half-year.
 
-        REAL, INTENT(IN) :: lat, ecc, xob, perh
-        REAL, INTENT(OUT) :: Rs
+        REAL(KIND=8), INTENT(IN)  :: ecc, perh
+        REAL(KIND=8), INTENT(OUT) :: Ts, Tw
 
-        ! local
-        REAL, DIMENSION(360) :: solarm
-
-        ! compute daily insolation at latitude lat for 360 days
-        CALL SINSOL(lat, ecc, xob, perh, solarm)
-
-        ! CALL SUMMER_LENGTH(ecc, perh, Ts)
-
-        ! total insola langley units
-        Rs = SUM(SOLARM(80:260)) ! * 86.4 / 41.840
-
-    END SUBROUTINE ASTRO_SUMMER
-
-
-    SUBROUTINE ASTRO_WINTER(lat, ecc, xob, perh, Rw)
-        ! Computes cumulative insolation during astronomical winter
-        ! for a given latitude and orbital parameters.
-        ! Simply selects insolation till vernal equinox (day 80)
-        ! and from fall equinox (day 80 + 180) and accumulates it.
-        ! Results in Langley units to compare with Milankov. Kanon.
-
-        REAL, INTENT(IN) :: lat, ecc, xob, perh
-        REAL, INTENT(OUT) :: Rw
-
-        ! local
-        REAL, DIMENSION(360) :: solarm
-
-        ! compute daily insolation at latitude lat for 360 days
-        CALL SINSOL(lat, ecc, xob, perh, solarm)
-
-        ! CALL SUMMER_LENGTH(ecc, perh, Ts)
-
-        ! total insola langley units
-        Rw = SUM(SOLARM(:80)) + SUM(SOLARM(260:)) ! * 86.4 / 41.840
-
-    END SUBROUTINE ASTRO_WINTER
-
-    SUBROUTINE SUMMER_SOLSTICE(lat, ecc, xob, perh, Rs)
-        ! Computes insolation during summer solstice
-        ! for a given latitude and orbital parameters.
-        ! Results in Langley units to compare with Milankov. Kanon.
-
-        REAL, INTENT(IN) :: lat, ecc, xob, perh
-        REAL, INTENT(OUT) :: Rs
-
-        ! local
-        REAL, DIMENSION(360) :: solarm
-
-        ! compute daily insolation at latitude lat for 360 days
-        CALL SINSOL(lat, ecc, xob, perh, solarm)
-
-        ! CALL SUMMER_LENGTH(ecc, perh, Ts)
-
-        ! total insola langley units
-        Rs = SOLARM(80 + 90) ! * 86.4 / 41.840
-
-    END SUBROUTINE SUMMER_SOLSTICE
-
-    SUBROUTINE SUMMER_LENGTH(ecc, perh, Ts)
-        ! Computes length of astronomical summer half-year.
-
-        REAL, INTENT(IN) :: ecc, perh
-        INTEGER, INTENT(OUT) :: Ts
-
-        Ts = CEILING((0.5 * ttrop) * (1 + (4 * ecc * SIN(perh * pir) / pi)))
+        Ts = (0.5D0 * ttrop) * (1.D0 + (4.D0 * ecc * SIN(perh * pir) / pi))
+        Tw = ttrop - Ts
         
-    END SUBROUTINE SUMMER_LENGTH
-    
-    SUBROUTINE SINSOL(lat, ecc, xob, perh, solarm)
-        ! Original by C.Kubatzki & A.Ganopolski
-        ! Computes daily solar insolation for a year
+    END SUBROUTINE SEASONS_LENGTH
+
+    SUBROUTINE SINSOL(s0, lat, ecc, xob, perh, solarm, astrosum, astrowin, ss, sw)
+        ! original by Kubatzki and Ganopolski,
+        ! computes daily solar insolation for a year
         ! given a latitude and orbital parameters.
-        ! Modified from sinsol.f routine in CLIMBER-2.
+        ! modified from original part of CLIMBER-2.
+        ! modified by maduvi to accumulate astronomical seasons.
         
         IMPLICIT NONE
         
-        REAL, INTENT(IN)                  :: lat, ecc, xob, perh
-        REAL, DIMENSION(360), INTENT(OUT) :: solarm
+        REAL(KIND=8), INTENT(IN)                  :: lat, ecc, xob, perh, s0
+        REAL(KIND=8), INTENT(OUT)                 :: astrosum, astrowin, ss, sw
+        REAL(KIND=8), DIMENSION(360), INTENT(OUT) :: solarm
 
         ! local
-        INTEGER :: nd, m, nh
-        REAL :: fi
-        REAL :: tperi, zavexpe, pclock
-        REAL :: pytime, pdisse, pzen1, pzen2, pzen3, prae
-        REAL :: cosp, cosn, s
+        INTEGER      :: nd, m, nh
+        REAL(KIND=8) :: fi
+        REAL(KIND=8) :: tperi, zavexpe, pclock
+        REAL(KIND=8) :: pytime, pdisse, pzen1, pzen2, pzen3, prae
+        REAL(KIND=8) :: cosp, cosn, s
+        REAL(KIND=8) :: Ts, Tw
+        REAL(KIND=8) :: dfracs
 
+        ! latitude in radians
         fi = lat * pir
-        
+      
         CALL BERGOR(ecc, perh, tperi, zavexpe)
         
+        CALL SEASONS_LENGTH(ecc, perh, Ts, Tw)
+
+        dfracs = MOD(Ts, 1.0)  ! get decimal parts (day fractions)
+        astrosum = 0.0
+        astrowin = 0.0
+        
         ! Daily insolation is calculated by hourly integration for each day
+        
         DO nd = 1, 360
             m=nd
             pytime = nd * 2.0 * pi / 360.0
             solarm(m) = 0.0
-
             DO nh = 1, 24
-                pclock = nh * 2.0* pi / 24.0
+                pclock = nh * 2.0 * pi / 24.0
 
                 CALL ORBIT(ecc, xob, tperi, zavexpe, pclock,&
                     &pytime, pdisse, pzen1, pzen2, pzen3, prae)
@@ -192,6 +135,22 @@ CONTAINS
        
                 s = s0 * cosn * pdisse
                 solarm(m) = solarm(m) + s
+                
+                ! astronomical summer calculation
+                if (nd > 80 .and. nd <= 80 + FLOOR(Ts)) then
+                    astrosum = astrosum + s
+                end if
+                ! add little fractions lost in flooring
+                if (nd == 80 + FLOOR(Ts)) then
+                    astrosum = astrosum + (s * dfracs)
+                    astrowin = astrowin + (s * (1.D0 - dfracs))
+                end if
+                
+                ! astronomical winter calculation
+                if (nd < 80 .or. nd > 80 + FLOOR(Ts)) then
+                    astrowin = astrowin + s
+                end if
+
             END DO
         END DO
         
@@ -200,31 +159,37 @@ CONTAINS
             solarm(m) = solarm(m) / 24.0
         END DO
 
+        ! average per day
+        astrosum = astrosum / 24.0
+        astrowin = astrowin / 24.0
+        ss = MAXVAL(solarm)  ! solstices are extreme values
+        sw = MINVAL(solarm)
+
     END SUBROUTINE SINSOL
     
     SUBROUTINE ORBIT(ecc, xobch, tperi, zavexpe, pclock, pytime,&
         &pdisse, pzen1, pzen2, pzen3, prae)
-        ! Original by J. F. Geleyn.
-        ! Computes orbital parameters required for solar insolation.
-        ! Modified from sinsol.f routine in CLIMBER-2.
+        ! original by Geleyn.
+        ! computes orbital parameters required for solar insolation.
+        ! modified from original part in CLIMBER-2.
         
         IMPLICIT NONE
         
         ! global
-        REAL, INTENT(IN)   :: ecc, xobch, tperi, zavexpe, pclock, pytime
-        REAL, INTENT(OUT)  :: pdisse, pzen1, pzen2, pzen3, prae
+        REAL(KIND=8), INTENT(IN)  :: ecc, xobch, tperi, zavexpe, pclock, pytime
+        REAL(KIND=8), INTENT(OUT) :: pdisse, pzen1, pzen2, pzen3, prae
         
         ! local
-        INTEGER :: niter
-        REAL :: zclock, zytime, time, eold, enew, eps
-        REAL :: cose, zeps, e, zsqecc, ztgean, znu, zlambda
-        REAL :: zsinde, zdecli, xobche, zdisse, zzen1, zzen2, zzen3
-        REAL, PARAMETER    :: zrae = +0.1277E-02
+        INTEGER      :: niter
+        REAL(KIND=8) :: zclock, zytime, time, eold, enew, eps
+        REAL(KIND=8) :: cose, zeps, e, zsqecc, ztgean, znu, zlambda
+        REAL(KIND=8) :: zsinde, zdecli, xobche, zdisse, zzen1, zzen2, zzen3
+        REAL(KIND=8), PARAMETER :: zrae = +0.1277E-02
         
         zclock = pclock
         zytime = pytime
         
-        time = zytime - 2 * pi * tperi / ttrop
+        time = zytime - 2.0 * pi * tperi / ttrop
         eold = time / (1.0 - ecc)
         enew = time
         eps = 1.E-6
@@ -241,7 +206,7 @@ CONTAINS
           
             eold = enew
             cose = COS(enew)
-            enew = (time + ecc * (SIN(enew) - enew * cose)) / (1.0-  ecc * cose)
+            enew = (time + ecc * (SIN(enew) - enew * cose)) / (1.0 - ecc * cose)
             zeps = eold - enew
         END DO
       
@@ -250,7 +215,7 @@ CONTAINS
         zsqecc = SQRT((1 + ecc) / (1 - ecc))
         ztgean = TAN(e / 2)
         znu = 2.0 * ATAN(zsqecc * ztgean)
-        zlambda = znu+zavexpe
+        zlambda = znu + zavexpe
         xobche = xobch * pir
         zsinde = SIN(xobche) * SIN(zlambda)
         zdecli = ASIN(zsinde)
@@ -266,22 +231,22 @@ CONTAINS
         prae = zrae
         
     END SUBROUTINE  ORBIT
-    
+
     SUBROUTINE BERGOR(ecc, perh, tper, zan)
-        ! Original by S. J. Lorenz.
-        ! Computes day of perihelion in year and zenith angle.
-        ! Modified from sinsol.f routine in CLIMBER-2.
+        ! original by Lorenz.
+        ! computes day of perihelion in year and zenith angle.
+        ! modified from original part in CLIMBER-2.
         
         IMPLICIT NONE
         
-        REAL, INTENT(IN)     :: ecc, perh
-        REAL, INTENT(OUT)    :: tper, zan
+        REAL(KIND=8), INTENT(IN)  :: ecc, perh
+        REAL(KIND=8), INTENT(OUT) :: tper, zan
         
         ! local
-        REAL                 :: ang, tgnu, sqecc, e, tian, days, epc
+        REAL(KIND=8) :: ang, tgnu, sqecc, e, tian, days, epc
         
         ! calculate time of perihelion in year:
-        ang = perh - 180.
+        ang = perh - 180.0
         
         IF (ang < 0.0) THEN
             ang = ang + 360.0
@@ -295,55 +260,46 @@ CONTAINS
         ! time angle in radians of perihelion from vernal equinox
         tian = e - ecc * SIN(e)
         days = tian / pir !   360 day year only
-        IF (days < 0.0) THEN
+        IF (days.lt.0.0) THEN
             days = days + 360.0 !   days from ver.eq. to perh.
         END IF
         
         ! time in days from begin of year: vernal eq. fixed at 3/21, 12 GMT
         ! = 80.5 days in 360 day year
         tper = days + 80.5
-        IF (tper > 360.0) THEN
+        IF (tper.gt.360.0) THEN
             tper = tper - 360.0
         END IF
 
     END SUBROUTINE BERGOR
     
     SUBROUTINE BERGER(t, perh, ecc, xob)
-        ! Original Berger (1978) routine. Computes:
-        ! Eccentricity with 19 coefficients.
-        ! Obliquity (deg) with 18 coefficients.
-        ! General precession longitude with 9 coefficients.
-        ! Reference DOI:
-        ! 10.1175/1520-0469(1978)035<2362:LTVODI>2.0.CO;2
-        ! Modified from sinsol.f routine in CLIMBER-2.
+        ! original Berger (1978) routine. compute:
+        ! eccentricity (19 coeff), obliquity (deg) (18 coeff),
+        ! general precession longitude (9 coeff).
+        ! modified from original part in CLIMBER-2.
         
         IMPLICIT NONE
         
         ! global
-        REAL, INTENT(IN)    :: t
-        REAL, INTENT(out)   :: perh, ecc, xob
+        REAL(KIND=8), INTENT(IN)    :: t
+        REAL(KIND=8), INTENT(out)   :: perh, ecc, xob
         
         ! local
-        INTEGER             :: i
-        INTEGER             :: nef, nob, nop
-        REAL                :: xod, xop, prm, arg
-        REAL                :: xes, xec
-        REAL                :: tra, rp, prg
-        REAL, DIMENSION(19) :: AE, BE ,CE
-        REAL, DIMENSION(18) :: AOB, BOB, COB
-        REAL, DIMENSION(9)  :: AOP, BOP, COP
+        INTEGER                      :: i
+        INTEGER, PARAMETER           :: nef=19, nob=18, nop=9
+        REAL(KIND=8), PARAMETER      :: xod=23.320556
+        REAL(KIND=8), PARAMETER      :: xop=3.392506
+        REAL(KIND=8), PARAMETER      :: prm = 50.439273
+        REAL(KIND=8)                 :: arg, xes, xec
+        REAL(KIND=8)                 :: tra, rp, prg
+        REAL(KIND=8), DIMENSION(nef) :: AE, BE ,CE
+        REAL(KIND=8), DIMENSION(nob) :: AOB, BOB, COB
+        REAL(KIND=8), DIMENSION(nop) :: AOP, BOP, COP
         
-        ! 1.EARTH ORBITAL ELEMENTS :
-        !   ECCENTRICITY ECC (TABLE 1)
-        !   OBLIQUITY    XOB   (TABLE 2)
-        !   LONGITUDE PERIHELION  PERH  (TABLE 3)
-        !   PRECESSIONAL PARAMETER PRE
-        !   GENERAL PRECESSION  PRG
-        ! AMPLITUDE A  MEAN RATE B  PHASE C
-        ! THEY ARE IMMEDIATELY CONVERTED IN RADIANS
+        ! 1.earth orbital elements:
         
-        ! ECCENTRICITY
-        nef = 19
+        ! eccentricity
         AE(1) =  0.01860798
         AE(2) =  0.01627522
         AE(3) = -0.01300660
@@ -402,9 +358,7 @@ CONTAINS
         CE(18) = 210.667199 * pir
         CE(19) =  72.108838 * pir
       
-        ! OBLIQUITY
-        xod = 23.320556
-        nob = 18
+        ! obliquity
         AOB(1) = -2462.2214466
         AOB(2) =  -857.3232075
         AOB(3) =  -629.3231835
@@ -460,19 +414,16 @@ CONTAINS
         COB(17) =  20.2082 * pir
         COB(18) =  40.8226 * pir
 
-        ! GENERAL PRECESSION IN LONGITUDE
-        xop = 3.392506
-        prm = 50.439273
-        nop = 9
-        AOP(1) = 7391.0225890
-        AOP(2) = 2555.1526947
-        AOP(3) = 2022.7629188
+        ! general precession in longitude
+        AOP(1) =  7391.0225890
+        AOP(2) =  2555.1526947
+        AOP(3) =  2022.7629188
         AOP(4) = -1973.6517951
         AOP(5) =  1240.2321818
-        AOP(6) =  953.8679112
-        AOP(7) = -931.7537108
-        AOP(8) =  872.3795383
-        AOP(9) = 606.3544732
+        AOP(6) =   953.8679112
+        AOP(7) =  -931.7537108
+        AOP(8) =   872.3795383
+        AOP(9) =   606.3544732
         BOP(1) =  31.609974 * pirr
         BOP(2) =  32.620504 * pirr
         BOP(3) =  24.172203 * pirr
@@ -492,8 +443,8 @@ CONTAINS
         COP(8) =  15.3747 * pir
         COP(9) =  58.5749 * pir
 
-        ! 3.NUMERICAL VALUE FOR ECC PRE XOB
-        ! T IS NEGATIVE FOR THE PAST      
+        ! 3.numerical value for ecc pre xob
+        ! t is negative for the past      
         xes = 0.0
         xec = 0.0
         DO  i = 1, nef
@@ -567,5 +518,128 @@ CONTAINS
         END DO
 
     END SUBROUTINE BERGER
-  
+
+    SUBROUTINE BERGER_WDATA(t, perh, ecc, xob)
+        ! original Berger (1978) routine.
+        ! modified from original part in CLIMBER-2.
+        ! only kept here in case debugging using
+        ! coefficients from text files like bre78.dat
+        
+        IMPLICIT NONE
+        
+        ! global
+        REAL(KIND=8), INTENT(IN)    :: t
+        REAL(KIND=8), INTENT(out)   :: perh, ecc, xob
+        
+        ! local
+        INTEGER                :: i, dum
+        INTEGER, PARAMETER     :: nef=19, nob=47, nop=78
+        REAL(KIND=8), PARAMETER      :: xod=23.32054929
+        REAL(KIND=8), PARAMETER      :: prm=50.43928443
+        REAL(KIND=8), PARAMETER      :: xop=3.39251498
+        REAL(KIND=8)                 :: arg, xes, xec
+        REAL(KIND=8)                 :: tra, rp, prg
+        REAL(KIND=8), DIMENSION(nef) :: AE, BE ,CE
+        REAL(KIND=8), DIMENSION(nob) :: AOB, BOB, COB, DOB
+        REAL(KIND=8), DIMENSION(nop) :: AOP, BOP, COP, DOP
+        CHARACTER       :: dummy
+
+        ! 1.earth orbital elements :
+
+        OPEN(1, file='bre78_trunc.dat', access='sequential', form='formatted', action='read')
+
+        ! header with info
+        READ(1, *) dummy
+        DO i = 1, nef
+            READ(1, '((I4), 3(F20.10))') dum, AE(i), BE(i), CE(i)
+        END DO
+        BE = BE * pirr
+        CE = CE * pir
+        DO i = 1, nob
+            READ(1, '((I5), (F15.7), (F12.6), (F12.4), (F12.0))') dum, AOB(i), BOB(i), COB(i), DOB(i)
+        END DO
+        BOB = BOB * pirr
+        COB = COB * pir
+        DO i = 1, nop
+            READ(1, '((I5), (F15.7), (F12.6), (F12.4), (F12.0))') dum, AOP(i), BOP(i), COP(i), DOP(i)
+        END DO
+        BOP = BOP * pirr
+        COP = COP * pir
+        CLOSE(1)
+        
+        ! 3.numerical value for ecc pre xob
+        ! t is negative for the past      
+        xes = 0.0
+        xec = 0.0
+        DO  i = 1, nef
+            arg = BE(i) * t + CE(i)
+            xes = xes + AE(i) * SIN(arg)
+            xec = xec + AE(i) * COS(arg)
+        END DO
+
+        ! eccentricity
+        ecc = SQRT((xes * xes) + (xec * xec))
+        tra = ABS(xec)
+
+        ! adjusting rp if needed
+        IF (tra <= 1.0E-08) THEN
+            IF (xes < 0) then
+                rp = 1.5 * pi
+            ELSE IF (xes == 0) THEN
+                rp = 0.0
+            ELSE
+                rp = pi / 2.0
+            END IF
+        ELSE
+            rp = ATAN(xes / xec)
+
+            IF (xec < 0) THEN
+                rp = rp + pi
+            ELSE IF (xec == 0) THEN
+                IF (xes < 0) then
+                    rp = 1.5 * pi
+                ELSE IF (xes == 0) THEN
+                    rp = 0.0
+                ELSE
+                    rp = pi / 2.0
+                END IF
+            ELSE
+                IF (xes < 0) THEN
+                    rp = rp + 2.0 * pi
+                END IF
+            END IF
+        END IF
+
+        ! perihelion longitude
+        perh = rp / pir
+
+        ! perigee
+        prg = prm * t
+
+        DO i = 1, nop
+            arg = BOP(i) * t + COP(i)
+            prg = prg + AOP(i) * SIN(arg)
+        END DO
+
+        prg = (prg / 3600.0) + xop
+
+        ! omega
+        perh = perh + prg
+
+        DO WHILE (perh < 0)
+            perh = perh + 360.0
+        END DO
+        DO WHILE (perh > 360)
+            perh = perh - 360.0
+        END DO
+
+        ! obliquity
+        xob = xod
+        DO i = 1, nob
+            arg = (BOB(i) * t) + COB(i)
+            xob = XOB + (AOB(i) / 3600.0) * COS(arg)
+        END DO
+
+    END SUBROUTINE BERGER_WDATA
+
 END MODULE calormod
