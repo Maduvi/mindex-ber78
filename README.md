@@ -19,7 +19,7 @@ The executable allows the user four types of applications. A Fortran namelist te
 
 In the namelist files the parameter `ktyp` is the one that defines the type of application:
 
-- `ktyp=0`: computes monsoon forcing index in a transient time series (example: `tests/test_mindex.sh`).
+- `ktyp=0`: computes monsoon forcing index in a transient time series (example: [tests/test_mindex.sh](https://github.com/Maduvi/monsindex-fortran/blob/e53c56ce8ec7e75a3a56b36ba825e1076c99b34d/tests/test_mindex.sh).
 - `ktyp=1`: computes insolation quantities for a chosen latitude (e.g., mean astronomical summer and summer solstice insolation) (example: `tests/test_insolation.sh`).
 - `ktyp=2`: computes monsoon forcing index and insolation quantities for a chosen time slice and latitude (example: `tests/test_timeslice.sh`).
 - `ktyp=3`: same as `ktyp=3` but instead of a time slice, the input are arbitrary orbital parameters (example: `tests/test_orbinput.sh`).
