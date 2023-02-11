@@ -4,7 +4,7 @@ Compute the orbital insolation monsoon forcing index for any time slice past, pr
 
 To compute the index we need know Earth's orbital configuration. Here we obtain the variations of the Earth's orbital parameters using the method of Berger (1978), employing 19 coefficients for eccentricity, 18 for obliquity and 9 for general precession longitude. Using the orbital parameters we compute daily insolation like in CLIMBER-2 climate model (Petoukhov et al., 2000). Daily insolation is then accumulated into astronomical half-years and used for the formulae of Vernerkar (1972) to obtain the Northern Hemisphere caloric half-year summer insolation values and ultimately the monsoon forcing index. Like in Rossignol-Strick (1983), the program returns in fact the variations in the monsoon forcing index from its 1950 CE (reference year) value. Radiation units can be chosen to be as in Rossignol-Strick (1983) (Langley day-1), or can be converted to W m-2 multiplying by about 0.484.
 
-## Compilation
+### Compilation
 
 The program is writen in Fortran 90. In case the executable in `bin` folder does not work (compiled with GNU Fortran 8.5.0), then one needs to compile the source code. To compile the program a `Makefile` is provided for the GNU compiler `gfortran`. In a terminal go to the program folder and execute the `make` statement:
 
@@ -13,12 +13,6 @@ $ make
 ```
 
 One executable file is created in the `bin` folder: `monsindex.exe`.
-
-## Examples and testing
-
-Please check the contents of folder `tests` for some already-made applications. Tests are run easily using the provided BASH scripts.
-
-For the tests we compare the results of `monsindex.exe` with the output of `palinsol` R package (https://bitbucket.org/mcrucifix/insol). We can only compare insolation quantities, since `palinsol` does not calculate the monsoon forcing index. To test the calculation of the index we have digitized partly the data published in Vernekar (1972) to be able to estimate the original monsoon forcing index values of Rossignol-Strick (1983). Differences between our monsoon index and the original Rossignol-Strick (1983) should be explained in the difference in orbital parameters (we use Berger (1978), and not Vernekar's (1972)).
 
 ## Usage
 The executable allows the user four types of applications. A Fortran namelist text file is required as input with the specifications of the calculation. Example namelist files have a header with an arrow that helps align white spaces for the format that the Fortran program requires to be able to reliably read input parameters. If a wrong format is used in the namelist file then results can be weird. The program prints all output into `stdout`.
