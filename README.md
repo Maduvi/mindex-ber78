@@ -19,10 +19,10 @@ The executable allows the user four types of applications. A Fortran namelist te
 
 In the namelist files the parameter `ktyp` is the one that defines the type of application:
 
-- ´ktyp=0: computes monsoon forcing index in a transient time series (example: [tests/test_mindex.sh](https://github.com/Maduvi/monsindex-fortran/blob/e53c56ce8ec7e75a3a56b36ba825e1076c99b34d/tests/test_mindex.sh)).
-- `ktyp=1`: computes insolation quantities for a chosen latitude (e.g., mean astronomical summer and summer solstice insolation) (example: [tests/test_insolation.sh](https://github.com/Maduvi/monsindex-fortran/blob/f5509c88a6d72d944fd4d4bfa08baad3ec05a5a2/tests/test_insolation.sh)).
-- `ktyp=2`: computes monsoon forcing index and insolation quantities for a chosen time slice and latitude (example: [tests/test_timeslice.sh](https://github.com/Maduvi/monsindex-fortran/blob/82a02433d4b95ec25125efdaa5c921e359192986/tests/test_timeslice.sh)).
-- `ktyp=3`: same as `ktyp=2` but instead of a time slice, the input are arbitrary orbital parameters (example: [tests/test_orbinput.sh](https://github.com/Maduvi/monsindex-fortran/blob/1d2f05f673a4c2c73af6d040ca40a26f54fb90f2/tests/test_orbinput.sh)).
+- ktyp=0: computes monsoon forcing index in a transient time series (example: [tests/test_mindex.sh](https://github.com/Maduvi/monsindex-fortran/blob/e53c56ce8ec7e75a3a56b36ba825e1076c99b34d/tests/test_mindex.sh)).
+- ktyp=1: computes insolation quantities for a chosen latitude (e.g., mean astronomical summer and summer solstice insolation) (example: [tests/test_insolation.sh](https://github.com/Maduvi/monsindex-fortran/blob/f5509c88a6d72d944fd4d4bfa08baad3ec05a5a2/tests/test_insolation.sh)).
+- ktyp=2: computes monsoon forcing index and insolation quantities for a chosen time slice and latitude (example: [tests/test_timeslice.sh](https://github.com/Maduvi/monsindex-fortran/blob/82a02433d4b95ec25125efdaa5c921e359192986/tests/test_timeslice.sh)).
+- ktyp=3: same as `ktyp=2` but instead of a time slice, the input are arbitrary orbital parameters (example: [tests/test_orbinput.sh](https://github.com/Maduvi/monsindex-fortran/blob/1d2f05f673a4c2c73af6d040ca40a26f54fb90f2/tests/test_orbinput.sh)).
 
 Parameter `kuni` controls the units. 0 is W m-2 and 1 is Langley day-1. Parameter `qlat` is for the specific latitude in cases when `ktyp=1,2,3`. Parameter `s0` sets the solar constant.
 
