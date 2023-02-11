@@ -28,7 +28,7 @@ Parameter `kuni` controls the units. 0 is W m-2 and 1 is Langley day-1. Paramete
 
 Please look into folder `tests` to see an example of each use case.
 
-## References
+### References
 
 Berger, A. (1978). Long-term variations of daily insolation and Quaternary climatic changes. Journal of Atmospheric Sciences, 35(12), 2362-2367. https://doi.org/10.1175/1520-0469(1978)035<2362:LTVODI>2.0.CO;2.
 
